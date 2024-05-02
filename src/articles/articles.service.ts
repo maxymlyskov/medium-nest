@@ -1,6 +1,7 @@
 import { UserEntity } from '@app/users/users.entity';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import slugify from 'slugify';
 import { Repository } from 'typeorm';
 import { ArticleEntity } from './articles.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -19,12 +20,16 @@ export class ArticlesService {
 
         newArticle.author = user;
 
-        newArticle.slug = newArticle.title.toLowerCase().replace(/ /g, '-');
+        newArticle.slug = this.getSlug(newArticle.title);
 
         return await this.articleRepository.save(newArticle)
     }
 
     buildArticleResponse(article: ArticleEntity): ArticleResponseInterface {
         return { article }
+    }
+
+    private getSlug(title: string): string {
+        return slugify(title, { lower: true }) + ((Math.random() * Math.pow(36, 6)) | 0).toString(36);
     }
 }
