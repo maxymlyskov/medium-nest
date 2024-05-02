@@ -4,6 +4,7 @@ import { compare } from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseInteface } from './types/user-response.interface';
 import { UserEntity } from './users.entity';
 @Injectable()
@@ -75,5 +76,10 @@ export class UsersService {
             email: user.email,
             username: user.username,
         }, process.env.SECRET_KEY, { expiresIn: '7d' })
+    }
+
+    async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
+        await this.usersRepository.update({ id }, updateUserDto);
+        return this.findById(id);
     }
 }
