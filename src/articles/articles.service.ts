@@ -4,12 +4,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArticleEntity } from './articles.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
+import { ArticleResponseInterface } from './types/article-response.interface';
 
 @Injectable()
 export class ArticlesService {
     constructor(@InjectRepository(ArticleEntity) private readonly articleRepository: Repository<ArticleEntity>) { }
 
-    async createArticle(user: UserEntity, createArticleDto: CreateArticleDto): Promise<any> {
+    async createArticle(user: UserEntity, createArticleDto: CreateArticleDto): Promise<ArticleEntity> {
         const newArticle = new ArticleEntity();
         Object.assign(newArticle, createArticleDto);
 
@@ -21,5 +22,9 @@ export class ArticlesService {
         newArticle.slug = newArticle.title.toLowerCase().replace(/ /g, '-');
 
         return await this.articleRepository.save(newArticle)
+    }
+
+    buildArticleResponse(article: ArticleEntity): ArticleResponseInterface {
+        return { article }
     }
 }
