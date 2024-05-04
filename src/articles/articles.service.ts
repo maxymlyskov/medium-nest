@@ -2,15 +2,51 @@ import { UserEntity } from '@app/users/users.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
-import { DeleteResult, Repository } from 'typeorm';
+import { DataSource, DeleteResult, Repository } from 'typeorm';
 import { ArticleEntity } from './articles.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/article-response.interface';
+import { ArticlesResponseInterface } from './types/articles-response.interface';
 
 @Injectable()
 export class ArticlesService {
-    constructor(@InjectRepository(ArticleEntity) private readonly articleRepository: Repository<ArticleEntity>) { }
+    constructor(
+        @InjectRepository(ArticleEntity) private readonly articleRepository: Repository<ArticleEntity>,
+        @InjectRepository(UserEntity) private readonly userRespository: Repository<UserEntity>,
+        private dataSource: DataSource) { }
+
+    async findAll(currentUserId: number, query: any): Promise<ArticlesResponseInterface> {
+        const queryBuilder = this.dataSource.getRepository(ArticleEntity)
+            .createQueryBuilder('articles')
+            .leftJoinAndSelect('articles.author', 'author');
+
+        queryBuilder.orderBy('articles.createdAt', 'DESC');
+
+        const articlesCount = await queryBuilder.getCount();
+
+        if (query.tag) {
+            queryBuilder.andWhere('articles.tagList LIKE :tag', { tag: `%${query.tag}%` });
+        }
+
+        if (query.author) {
+            const author = await this.userRespository.findOne({ where: { username: query.author } });
+            queryBuilder.andWhere('articles.authorId = :id', { id: author.id });
+        }
+
+        if (query.limit) {
+            queryBuilder.limit(query.limit);
+        }
+
+        if (query.offset) {
+            queryBuilder.offset(query.offset);
+        }
+
+        const articles = await queryBuilder.getMany();
+
+        return { articles, articlesCount };
+
+    }
 
     async createArticle(user: UserEntity, createArticleDto: CreateArticleDto): Promise<ArticleEntity> {
         const newArticle = new ArticleEntity();
