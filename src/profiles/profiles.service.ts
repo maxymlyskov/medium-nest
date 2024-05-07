@@ -21,7 +21,14 @@ export class ProfilesService {
             throw new HttpException('Profile not found.', HttpStatus.NOT_FOUND);
         }
 
-        return { ...user, following: false };
+        const follow = await this.followsRepository.findOne({
+            where: {
+                followerId: currentUserId,
+                followingId: user.id,
+            }
+        });
+
+        return { ...user, following: !!follow };
     }
 
     async followProfile(currentUserId: number, profileUsername: string): Promise<ProfileType> {
@@ -52,6 +59,33 @@ export class ProfilesService {
         }
 
         return { ...user, following: true };
+    }
+    async unfollowProfile(currentUserId: number, profileUsername: string): Promise<ProfileType> {
+        const user = await this.usersRepository.findOne({
+            where: { username: profileUsername },
+        });
+
+        if (!user) {
+            throw new HttpException('Profile not found.', HttpStatus.NOT_FOUND);
+        }
+        if (currentUserId === user.id) {
+            throw new HttpException('Follower and following can not be the same user.', HttpStatus.BAD_REQUEST);
+        }
+
+        const follow = await this.followsRepository.findOne({
+            where: {
+                followerId: currentUserId,
+                followingId: user.id,
+            }
+        });
+
+        await this.followsRepository.delete({
+            followerId: currentUserId,
+            followingId: user.id,
+        });
+
+
+        return { ...user, following: false };
     }
 
     buildProfileResponse(profile: ProfileType): ProfileResponseInterface {
