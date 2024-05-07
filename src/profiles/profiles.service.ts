@@ -13,12 +13,18 @@ export class ProfilesService {
         @InjectRepository(FollowEntity) private readonly followsRepository: Repository<FollowEntity>) { }
 
     async getProfile(currentUserId: number, profileUsername: string): Promise<ProfileType> {
+        const errorResponse = {
+            errors: {
+                'username': 'not found',
+            },
+
+        }
         const user = await this.usersRepository.findOne({
             where: { username: profileUsername },
         });
 
         if (!user) {
-            throw new HttpException('Profile not found.', HttpStatus.NOT_FOUND);
+            throw new HttpException(errorResponse, HttpStatus.NOT_FOUND);
         }
 
         const follow = await this.followsRepository.findOne({
@@ -32,12 +38,17 @@ export class ProfilesService {
     }
 
     async followProfile(currentUserId: number, profileUsername: string): Promise<ProfileType> {
+        const errorResponse = {
+            errors: {
+                'username': 'not found',
+            },
+        }
         const user = await this.usersRepository.findOne({
             where: { username: profileUsername },
         });
 
         if (!user) {
-            throw new HttpException('Profile not found.', HttpStatus.NOT_FOUND);
+            throw new HttpException(errorResponse, HttpStatus.NOT_FOUND);
         }
         if (currentUserId === user.id) {
             throw new HttpException('Follower and following can not be the same user.', HttpStatus.BAD_REQUEST);
@@ -61,12 +72,18 @@ export class ProfilesService {
         return { ...user, following: true };
     }
     async unfollowProfile(currentUserId: number, profileUsername: string): Promise<ProfileType> {
+        const errorResponse = {
+            errors: {
+                'username': 'not found',
+            },
+
+        }
         const user = await this.usersRepository.findOne({
             where: { username: profileUsername },
         });
 
         if (!user) {
-            throw new HttpException('Profile not found.', HttpStatus.NOT_FOUND);
+            throw new HttpException(errorResponse, HttpStatus.NOT_FOUND);
         }
         if (currentUserId === user.id) {
             throw new HttpException('Follower and following can not be the same user.', HttpStatus.BAD_REQUEST);
